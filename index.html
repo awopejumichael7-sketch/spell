@@ -236,20 +236,23 @@
         
         .question-grid {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
             margin-bottom: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 5px;
         }
         
         .q-btn {
-            width: 40px;
-            height: 40px;
+            width: 35px;
+            height: 35px;
             border: none;
             border-radius: 5px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
-            font-size: 16px;
+            font-size: 14px;
         }
         
         .q-btn.current {
@@ -484,12 +487,13 @@
             
             .question-grid {
                 grid-template-columns: repeat(5, 1fr);
+                max-height: 150px;
             }
             
             .q-btn {
-                width: 35px;
-                height: 35px;
-                font-size: 14px;
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
             }
             
             .nav-buttons {
@@ -515,9 +519,9 @@
             }
             
             .q-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 13px;
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
             }
             
             .option {
@@ -536,13 +540,13 @@
     <div class="container">
         <header>
             <div class="logo">SPELLTACULAR</div>
-            <div class="subtitle">JSS2 Spelling Challenge</div>
+            <div class="subtitle">JSS2 Spelling Challenge - 50 Questions</div>
         </header>
         
         <div class="timer-section">
             <div class="timer-display" id="timer">
                 <span>⏱️ Time Left:</span>
-                <span id="time">01:30</span>
+                <span id="time">01:50</span>
             </div>
         </div>
         
@@ -567,7 +571,7 @@
                 <div class="review-panel">
                     <p><strong>Legend:</strong> 🟢 Answered | 🔴 Not Answered | 🔵 Current</p>
                 </div>
-                <div class="word-count" id="wordCount">Total Words: 90 | Current Set: 25 Random Words</div>
+                <div class="word-count" id="wordCount">Total Words: 90 | Current Set: 50 Random Words</div>
             </div>
         </div>
     </div>
@@ -575,7 +579,7 @@
     <div class="results-modal" id="resultsModal">
         <div class="results-content">
             <h2>Spelling Test Completed!</h2>
-            <div class="score-display" id="finalScore">0/25</div>
+            <div class="score-display" id="finalScore">0/50</div>
             <div class="stats">
                 <div class="stat-item">
                     <span class="stat-value" id="correctCount">0</span>
@@ -703,7 +707,7 @@
         let answered = [];
         let userAnswers = [];
         let currentQuestion = 0;
-        let totalTime = 90; // 90 seconds
+        let totalTime = 110; // 110 seconds
         let timeLeft = totalTime;
         let timerInterval;
         let attemptCount = 1;
@@ -719,9 +723,9 @@
             // Hide the test completed overlay
             document.getElementById("testCompletedOverlay").style.display = "none";
             
-            // Select 25 random words from the full list
+            // Select 50 random words from the full list
             const shuffledWords = [...spellingWords].sort(() => 0.5 - Math.random());
-            const selectedWords = shuffledWords.slice(0, 25);
+            const selectedWords = shuffledWords.slice(0, 50);
             
             // Create questions with multiple choice options
             questions = selectedWords.map(item => {
@@ -924,9 +928,9 @@
             const timerDisplay = document.getElementById("timer");
             timerDisplay.classList.remove("warning", "critical");
             
-            if (timeLeft <= 30 && timeLeft > 10) {
+            if (timeLeft <= 45 && timeLeft > 15) {
                 timerDisplay.classList.add("warning");
-            } else if (timeLeft <= 10) {
+            } else if (timeLeft <= 15) {
                 timerDisplay.classList.add("critical");
             }
         }
