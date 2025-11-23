@@ -974,6 +974,1137 @@
                 document.getElementById("btn" + qIndex).classList.add("answered");
                 
                 updateOptionStyles(qIndex);
+                
+                // Auto-navigate to next question if not the last question
+                if (qIndex < questions.length - 1) {
+                    setTimeout(() => {
+                        showQuestion(qIndex + 1);
+                    }, 500); // Small delay for better UX
+                } else {
+                    // If it's the last question, enable submit button
+                    document.getElementById('submitBtn').disabled = false;
+                }
+            }
+        }
+
+        function updateOptionStyles(qIndex) {
+            const options = document.querySelectorAll(`#q${qIndex} .option`);
+            const selectedOption = document.querySelector(`input[name="q${qIndex}"]:checked`);
+            
+            options.forEach(opt => opt.classList.remove("selected", "correct", "incorrect"));
+            
+            if (reviewMode) {
+                // In review mode, show correct/incorrect answers
+                options.forEach(opt => {
+                    const input = opt.querySelector('input');
+                    if (input.value === questions[qIndex].answer) {
+                        opt.classList.add("correct");
+                    } else if (input.checked && input.value !== questions[qIndex].answer) {
+                        opt.classList.add("incorrect");
+                    }
+                });
+            } else if (selectedOption) {
+                selectedOption.parentElement.classList.add("selected");
+            }
+        }
+
+        function navigateToQuestion(index) {
+            if (!testCompleted || reviewMode) {
+                showQuestion(index);
+            }
+        }
+
+        function nextQ() {
+            if (currentQuestion < questions.length - 1 && (!testCompleted || reviewMode)) {
+                showQuestion(currentQuestion + 1);
+            }
+        }
+
+        function prevQ() {
+            if (currentQuestion > 0 && (!testCompleted || reviewMode)) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+
+        function confirmSubmit() {
+            if (!testCompleted) {
+                const unansweredCount = answered.filter(a => !a).length;
+                
+                if (unansweredCount > 0) {
+                    if (confirm(`You have ${unansweredCount} unanswered questions. Are you sure you want to submit?`)) {
+                        submitTest();
+                    }
+                } else {
+                    if (confirm("Are you sure you want to submit your test?")) {
+                        submitTest();
+                    }
+                }
+            }
+        }
+
+        function autoSubmitTest() {
+            if (!testCompleted) {
+                testCompleted = true;
+                document.getElementById("testCompletedOverlay").style.display = "flex";
+                enableTestControls(false);
+                calculateScore();
+            }
+        }
+
+        function submitTest() {
+            if (!testCompleted) {
+                clearInterval(timerInterval);
+                testCompleted = true;
+                enableTestControls(false);
+                calculateScore();
+                showResults();
+            }
+        }
+        
+        function showResults() {
+            document.getElementById("testCompletedOverlay").style.display = "none";
+            document.getElementById("resultsModal").style.display = "flex";
+        }
+
+        function calculateScore() {
+            let score = 0;
+            questions.forEach((item, index) => {
+                if (userAnswers[index] === item.answer) score++;
+            });
+            
+            const correctCount = score;
+            const incorrectCount = userAnswers.filter((ans, idx) => ans !== null && ans !== questions[idx].answer).length;
+            const unansweredCount = questions.length - (correctCount + incorrectCount);
+            const timeTaken = totalTime - timeLeft;
+            
+            document.getElementById("finalScore").textContent = `${score}/${questions.length}`;
+            document.getElementById("correctCount").textContent = correctCount;
+            document.getElementById("incorrectCount").textContent = incorrectCount;
+            document.getElementById("unansweredCount").textContent = unansweredCount;
+            document.getElementById("timeTaken").textContent = formatTime(timeTaken);
+            document.getElementById("timeRemaining").textContent = formatTime(timeLeft);
+            
+            let performanceMessage = "";
+            const percentage = (score / questions.length) * 100;
+            if (percentage >= 90) {
+                performanceMessage = "Outstanding spelling skills!";
+            } else if (percentage >= 80) {
+                performanceMessage = "Excellent work!";
+            } else if (percentage >= 70) {
+                performanceMessage = "Good job!";
+            } else if (percentage >= 60) {
+                performanceMessage = "Not bad, but keep practicing!";
+            } else {
+                performanceMessage = "Keep studying these words!";
+            }
+            
+            document.getElementById("performanceMessage").textContent = performanceMessage;
+        }
+
+        function enableTestControls(enabled) {
+            // Enable/disable all radio buttons
+            document.querySelectorAll('input[type="radio"]').forEach(radio => {
+                radio.disabled = !enabled;
+            });
+            
+            // Enable/disable navigation buttons
+            document.querySelectorAll('.q-btn').forEach(btn => {
+                if (!enabled && !btn.classList.contains('current')) {
+                    btn.disabled = true;
+                } else {
+                    btn.disabled = false;
+                }
+            });
+            
+            // Enable/disable submit button
+            document.getElementById('submitBtn').disabled = !enabled;
+        }
+
+        function tryAgain() {
+            attemptCount++;
+            initializeTest();
+            closeResults();
+        }
+
+        function reviewAnswers() {
+            reviewMode = true;
+            closeResults();
+            showQuestion(0);
+            
+            // Update all questions to show correct/incorrect answers
+            questions.forEach((item, index) => {
+                updateOptionStyles(index);
+            });
+            
+            // Enable navigation but not answer selection
+            enableTestControls(false);
+            document.querySelectorAll('.q-btn').forEach(btn => {
+                btn.disabled = false;
+            });
+        }
+
+        function closeResults() {
+            document.getElementById("resultsModal").style.display = "none";
+        }
+
+        // Keyboard navigation
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "ArrowRight" && (!testCompleted || reviewMode)) {
+                nextQ();
+            } else if (e.key === "ArrowLeft" && (!testCompleted || reviewMode)) {
+                prevQ();
+            } else if (e.key >= "1" && e.key <= "9" && (!testCompleted || reviewMode)) {
+                const num = parseInt(e.key) - 1;
+                if (num < questions.length) {
+                    navigateToQuestion(num);
+                }
+            }
+        });
+
+        // Initialize the test when page loads
+        initializeTest();
+    </script>
+</body>
+</html>            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--dark) 0%, #1a2530 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .logo {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        .timer-section {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .timer-display {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .timer-display.warning {
+            color: var(--warning);
+            animation: pulse 1s infinite;
+        }
+        
+        .timer-display.critical {
+            color: var(--danger);
+            animation: pulse 0.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            min-height: 500px;
+        }
+        
+        .question-area {
+            flex: 1;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .question-box {
+            display: none;
+        }
+        
+        .question-box.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .question-text {
+            font-size: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 5px solid var(--primary);
+            text-align: center;
+        }
+        
+        .word-definition {
+            font-size: 16px;
+            color: var(--dark);
+            margin-bottom: 15px;
+            text-align: center;
+            font-style: italic;
+        }
+        
+        .audio-control {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .audio-control button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .audio-control button:hover {
+            transform: scale(1.1);
+            background: #2980b9;
+        }
+        
+        .options {
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        .option {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+        
+        .option:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .option.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .option.correct {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+        
+        .option.incorrect {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+        
+        .option input {
+            margin-right: 12px;
+            transform: scale(1.2);
+        }
+        
+        .option input:disabled {
+            cursor: not-allowed;
+        }
+        
+        .option:has(input:disabled) {
+            cursor: not-allowed;
+        }
+        
+        .option:has(input:disabled):hover {
+            transform: none;
+            background: #f8f9fa;
+        }
+        
+        .nav-section {
+            padding: 15px;
+            background: var(--light);
+            border-top: 1px solid #ddd;
+        }
+        
+        .nav-section h3 {
+            margin-bottom: 12px;
+            color: var(--dark);
+            text-align: center;
+            font-size: 18px;
+        }
+        
+        .question-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 6px;
+            margin-bottom: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        
+        .q-btn {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+        
+        .q-btn.current {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .q-btn.answered {
+            background: var(--success);
+            color: white;
+        }
+        
+        .q-btn.unanswered {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .q-btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .q-btn:not(.current):not(:disabled):hover {
+            opacity: 0.8;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 16px;
+            flex: 1;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        button:hover:not(:disabled) {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        button:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .review-panel {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+            font-size: 14px;
+        }
+        
+        .results-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        
+        .results-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+            animation: modalFade 0.5s;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes modalFade {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .score-display {
+            font-size: 42px;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 15px 0;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 15px 0;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray);
+        }
+        
+        .time-stats {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eee;
+        }
+        
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .attempt-counter {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--gray);
+        }
+        
+        .word-count {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--gray);
+            text-align: center;
+        }
+        
+        .test-completed-overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .test-completed-overlay h2 {
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--dark);
+        }
+        
+        .test-completed-overlay p {
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            color: var(--gray);
+        }
+        
+        /* Mobile-specific styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                border-radius: 10px;
+            }
+            
+            header {
+                padding: 15px 10px;
+            }
+            
+            .logo {
+                font-size: 1.8rem;
+            }
+            
+            .question-area {
+                padding: 15px;
+            }
+            
+            .question-text {
+                font-size: 18px;
+                padding: 12px;
+            }
+            
+            .word-definition {
+                font-size: 15px;
+            }
+            
+            .question-grid {
+                grid-template-columns: repeat(5, 1fr);
+                max-height: 150px;
+            }
+            
+            .q-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 13px;
+            }
+            
+            .nav-buttons {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .results-content {
+                padding: 20px;
+            }
+            
+            .score-display {
+                font-size: 36px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .question-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .q-btn {
+                width: 30px;
+                height: 30px;
+                font-size: 12px;
+            }
+            
+            .option {
+                font-size: 15px;
+                padding: 10px;
+            }
+            
+            button {
+                padding: 8px 15px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">SPELLTACULAR</div>
+            <div class="subtitle">JSS2 Spelling Challenge - 50 Questions</div>
+        </header>
+        
+        <div class="timer-section">
+            <div class="timer-display" id="timer">
+                <span>⏱️ Time Left:</span>
+                <span id="time">01:50</span>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="question-area">
+                <div class="test-completed-overlay" id="testCompletedOverlay">
+                    <h2>Time's Up!</h2>
+                    <p>The test has been automatically submitted.</p>
+                    <button class="btn-primary" onclick="showResults()">View Results</button>
+                </div>
+                <form id="spellingForm"></form>
+            </div>
+            
+            <div class="nav-section">
+                <h3>Question Navigation</h3>
+                <div class="question-grid" id="sidebar"></div>
+                <div class="nav-buttons">
+                    <button type="button" class="btn-primary" onclick="prevQ()" id="prevBtn">Previous</button>
+                    <button type="button" class="btn-success" onclick="confirmSubmit()" id="submitBtn">Submit Test</button>
+                    <button type="button" class="btn-primary" onclick="nextQ()" id="nextBtn">Next</button>
+                </div>
+                <div class="review-panel">
+                    <p><strong>Legend:</strong> 🟢 Answered | 🔴 Not Answered | 🔵 Current</p>
+                </div>
+                <div class="word-count" id="wordCount">Total Words: 90 | Current Set: 50 Random Words</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="results-modal" id="resultsModal">
+        <div class="results-content">
+            <h2>Spelling Test Completed!</h2>
+            <div class="score-display" id="finalScore">0/50</div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="correctCount">0</span>
+                    <span class="stat-label">Correct</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="incorrectCount">0</span>
+                    <span class="stat-label">Incorrect</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="unansweredCount">0</span>
+                    <span class="stat-label">Unanswered</span>
+                </div>
+            </div>
+            <div class="time-stats">
+                <p>Time Taken: <span id="timeTaken">00:00</span></p>
+                <p>Time Remaining: <span id="timeRemaining">00:00</span></p>
+            </div>
+            <p id="performanceMessage"></p>
+            <div class="action-buttons">
+                <button class="btn-warning" onclick="tryAgain()">Try Again</button>
+                <button class="btn-primary" onclick="reviewAnswers()">Review Answers</button>
+            </div>
+            <div class="attempt-counter" id="attemptCounter">Attempt: 1</div>
+        </div>
+    </div>
+
+    <script>
+        // All 90 spelling words from the PDF
+        const spellingWords = [
+            { word: "Casualty", definition: "A person injured or killed in an accident or war" },
+            { word: "Poisonous", definition: "Harmful or deadly when eaten, breathed, or touched" },
+            { word: "Assembled", definition: "Gathered together in one place" },
+            { word: "Purchased", definition: "Bought something by paying money" },
+            { word: "Realise", definition: "To become aware of something" },
+            { word: "Clinch", definition: "To succeed in achieving or securing something" },
+            { word: "Glad", definition: "Feeling happy or pleased" },
+            { word: "Amazement", definition: "A strong feeling of surprise" },
+            { word: "Ready-made", definition: "Already prepared or manufactured" },
+            { word: "Beginning", definition: "The start of something" },
+            { word: "Necessary", definition: "Something needed or required" },
+            { word: "Embarrass", definition: "To make someone feel uncomfortable or ashamed" },
+            { word: "Deputy", definition: "A person who acts as a second-in-command" },
+            { word: "Harass", definition: "To trouble or annoy repeatedly" },
+            { word: "Humorous", definition: "Funny or making people laugh" },
+            { word: "Separate", definition: "To move apart or divide" },
+            { word: "Occurrence", definition: "An event or something that happens" },
+            { word: "Noticeable", definition: "Easy to see or observe" },
+            { word: "Truly", definition: "Really or in a truthful way" },
+            { word: "Skip", definition: "To move quickly by hopping or to miss something" },
+            { word: "Participant", definition: "A person who takes part in something" },
+            { word: "Postponed", definition: "Delayed to a later time" },
+            { word: "Obvious", definition: "Easy to see or understand" },
+            { word: "Fervently", definition: "With strong and sincere feelings" },
+            { word: "Diligent", definition: "Working hard and carefully" },
+            { word: "Enlighten", definition: "To give knowledge or understanding" },
+            { word: "Relevant", definition: "Closely connected to the subject" },
+            { word: "Woefully", definition: "In a very bad or pitiful way" },
+            { word: "Cheat", definition: "To act dishonestly to gain an advantage" },
+            { word: "Vital", definition: "Very important and necessary" },
+            { word: "Adequate", definition: "Enough for a particular purpose" },
+            { word: "Obtain", definition: "To get or gain something" },
+            { word: "Particular", definition: "Special or specific" },
+            { word: "Agony", definition: "Extreme physical or mental pain" },
+            { word: "Rebuke", definition: "To criticize or scold sharply" },
+            { word: "Obstinate", definition: "Refusing to change one's opinion or behaviour" },
+            { word: "Enthusiasm", definition: "A strong excitement or interest" },
+            { word: "Bold", definition: "Willing to take risks; brave" },
+            { word: "Insolent", definition: "Rude and disrespectful" },
+            { word: "Agile", definition: "Able to move quickly and easily" },
+            { word: "Barrier", definition: "Something that blocks movement or progress" },
+            { word: "Fatigue", definition: "Extreme tiredness" },
+            { word: "Proficient", definition: "Skilled at doing something" },
+            { word: "Priceless", definition: "Too valuable to be measured in money" },
+            { word: "Familiar", definition: "Well-known or easily recognized" },
+            { word: "Desire", definition: "A strong wish for something" },
+            { word: "Contrary", definition: "Opposite in nature or direction" },
+            { word: "Rarely", definition: "Not happening often" },
+            { word: "Imprudent", definition: "Not careful; showing poor judgment" },
+            { word: "Alien", definition: "A foreigner or something strange" },
+            { word: "Impersonate", definition: "To copy someone to look or act like them" },
+            { word: "Advent", definition: "The coming or arrival of something" },
+            { word: "Tedious", definition: "Boring and too long" },
+            { word: "Dangerous", definition: "Likely to cause harm" },
+            { word: "Sour", definition: "Having a sharp or unpleasant taste or attitude" },
+            { word: "Poor", definition: "Having little money or low quality" },
+            { word: "Pleasant", definition: "Giving a sense of happiness or comfort" },
+            { word: "Exhibited", definition: "Shown or displayed publicly" },
+            { word: "Noticed", definition: "Became aware of something" },
+            { word: "Enraged", definition: "Very angry" },
+            { word: "Beaming", definition: "Smiling brightly or shining" },
+            { word: "Grow", definition: "To increase in size or develop" },
+            { word: "Mislead", definition: "To give the wrong idea" },
+            { word: "Neglected", definition: "Not cared for properly" },
+            { word: "Combine", definition: "To join together" },
+            { word: "Confuse", definition: "To make unclear or hard to understand" },
+            { word: "Cautious", definition: "Careful to avoid danger" },
+            { word: "Challenge", definition: "A difficult task or problem" },
+            { word: "Ambush", definition: "A surprise attack" },
+            { word: "Anticipate", definition: "To expect something to happen" },
+            { word: "Appoint", definition: "To choose someone for a job" },
+            { word: "Attempt", definition: "To try to do something" },
+            { word: "Ban", definition: "To forbid something officially" },
+            { word: "Despair", definition: "A complete loss of hope" },
+            { word: "Despise", definition: "To strongly dislike" },
+            { word: "Barren", definition: "Unable to produce (plants, life, or results)" },
+            { word: "Disapprove", definition: "To think badly of something" },
+            { word: "Disaster", definition: "A sudden terrible event" },
+            { word: "Devote", definition: "To give time or energy to something" },
+            { word: "Disappear", definition: "To go out of sight" },
+            { word: "Detect", definition: "To discover or notice something" },
+            { word: "Amateur", definition: "A person who is not a professional" },
+            { word: "Untidiness", definition: "A state of being messy" },
+            { word: "Stale", definition: "No longer fresh" },
+            { word: "Isolate", definition: "To set apart or separate" },
+            { word: "Haughty", definition: "Proud in a rude way" },
+            { word: "Contradict", definition: "To say the opposite of something" },
+            { word: "Absolute", definition: "Complete and not limited" },
+            { word: "Violate", definition: "To break a rule or law" },
+            { word: "Justify", definition: "To show or prove something is right" }
+        ];
+
+        // Global variables
+        let questions = [];
+        let answered = [];
+        let userAnswers = [];
+        let currentQuestion = 0;
+        let totalTime = 110; // 110 seconds
+        let timeLeft = totalTime;
+        let timerInterval;
+        let attemptCount = 1;
+        let testCompleted = false;
+        let reviewMode = false;
+
+        // Initialize the test
+        function initializeTest() {
+            // Reset test state
+            testCompleted = false;
+            reviewMode = false;
+            
+            // Hide the test completed overlay
+            document.getElementById("testCompletedOverlay").style.display = "none";
+            
+            // Select 50 random words from the full list
+            const shuffledWords = [...spellingWords].sort(() => 0.5 - Math.random());
+            const selectedWords = shuffledWords.slice(0, 50);
+            
+            // Create questions with multiple choice options
+            questions = selectedWords.map(item => {
+                // Generate incorrect spelling options
+                const incorrectOptions = generateIncorrectSpellings(item.word);
+                
+                // Combine correct and incorrect options and shuffle
+                const allOptions = [item.word, ...incorrectOptions];
+                return {
+                    word: item.word,
+                    definition: item.definition,
+                    options: shuffleArray([...allOptions]),
+                    answer: item.word
+                };
+            });
+            
+            // Reset answer tracking
+            answered = Array(questions.length).fill(false);
+            userAnswers = Array(questions.length).fill(null);
+            currentQuestion = 0;
+            timeLeft = totalTime;
+            
+            // Update attempt counter
+            document.getElementById("attemptCounter").textContent = `Attempt: ${attemptCount}`;
+            
+            // Clear and rebuild the form
+            const form = document.getElementById("spellingForm");
+            form.innerHTML = '';
+            
+            // Display questions
+            questions.forEach((item, index) => {
+                let div = document.createElement("div");
+                div.className = "question-box";
+                div.id = "q" + index;
+
+                div.innerHTML = `
+                    <div class="question-text">How do you spell this word?</div>
+                    <div class="word-definition">"${item.definition}"</div>
+                    <div class="audio-control">
+                        <button type="button" onclick="pronounceWord('${item.word}')">🔊</button>
+                    </div>
+                    <div class="options">
+                        <label class="option" for="q${index}o0">
+                            <input type="radio" id="q${index}o0" name="q${index}" value="${item.options[0]}" onchange="selectOption(${index}, 0)">
+                            ${item.options[0]}
+                        </label>
+                        <label class="option" for="q${index}o1">
+                            <input type="radio" id="q${index}o1" name="q${index}" value="${item.options[1]}" onchange="selectOption(${index}, 1)">
+                            ${item.options[1]}
+                        </label>
+                        <label class="option" for="q${index}o2">
+                            <input type="radio" id="q${index}o2" name="q${index}" value="${item.options[2]}" onchange="selectOption(${index}, 2)">
+                            ${item.options[2]}
+                        </label>
+                        <label class="option" for="q${index}o3">
+                            <input type="radio" id="q${index}o3" name="q${index}" value="${item.options[3]}" onchange="selectOption(${index}, 3)">
+                            ${item.options[3]}
+                        </label>
+                    </div>
+                `;
+                form.appendChild(div);
+            });
+
+            // Clear and rebuild sidebar buttons
+            const sidebar = document.getElementById("sidebar");
+            sidebar.innerHTML = '';
+            
+            for (let i = 0; i < questions.length; i++) {
+                let btn = document.createElement("button");
+                btn.id = "btn" + i;
+                btn.innerHTML = i + 1;
+                btn.classList.add("q-btn", "unanswered");
+                btn.addEventListener("click", () => navigateToQuestion(i));
+                sidebar.appendChild(btn);
+            }
+
+            // Show first question
+            showQuestion(0);
+            
+            // Update timer display
+            updateTimerDisplay();
+            
+            // Start the timer
+            clearInterval(timerInterval);
+            startTimer();
+            
+            // Update navigation buttons
+            updateNavButtons();
+            
+            // Enable all controls
+            enableTestControls(true);
+        }
+
+        // Generate common misspellings for a word
+        function generateIncorrectSpellings(word) {
+            const misspellings = [];
+            
+            // Common spelling errors based on word patterns
+            if (word.includes("ie")) {
+                misspellings.push(word.replace("ie", "ei"));
+            }
+            if (word.includes("ei")) {
+                misspellings.push(word.replace("ei", "ie"));
+            }
+            
+            // Double a single letter
+            if (word.length > 3) {
+                const randomPos = Math.floor(Math.random() * (word.length - 2)) + 1;
+                if (word[randomPos] !== word[randomPos-1] && word[randomPos] !== word[randomPos+1]) {
+                    misspellings.push(word.substring(0, randomPos) + word[randomPos] + word.substring(randomPos));
+                }
+            }
+            
+            // Remove a double letter
+            for (let i = 1; i < word.length; i++) {
+                if (word[i] === word[i-1]) {
+                    misspellings.push(word.substring(0, i) + word.substring(i+1));
+                    break;
+                }
+            }
+            
+            // Change a vowel
+            const vowels = ['a', 'e', 'i', 'o', 'u'];
+            for (let i = 0; i < word.length; i++) {
+                if (vowels.includes(word[i].toLowerCase())) {
+                    for (const vowel of vowels) {
+                        if (vowel !== word[i].toLowerCase()) {
+                            const newWord = word.substring(0, i) + vowel + word.substring(i+1);
+                            if (!misspellings.includes(newWord) && newWord !== word) {
+                                misspellings.push(newWord);
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+            
+            // If we still don't have enough misspellings, create some generic ones
+            while (misspellings.length < 3) {
+                let misspelling = word;
+                // Change a random character
+                const pos = Math.floor(Math.random() * word.length);
+                const randomChar = String.fromCharCode(97 + Math.floor(Math.random() * 26));
+                misspelling = misspelling.substring(0, pos) + randomChar + misspelling.substring(pos+1);
+                
+                if (misspelling !== word && !misspellings.includes(misspelling)) {
+                    misspellings.push(misspelling);
+                }
+            }
+            
+            return misspellings.slice(0, 3);
+        }
+
+        // Shuffle array function
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Pronounce word using browser speech synthesis
+        function pronounceWord(word) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.rate = 0.8;
+                utterance.pitch = 1;
+                utterance.volume = 1;
+                speechSynthesis.speak(utterance);
+            } else {
+                alert("Your browser doesn't support text-to-speech. The word is: " + word);
+            }
+        }
+
+        // Timer functions
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (!testCompleted) {
+                    updateTimerDisplay();
+                    timeLeft--;
+                    
+                    if (timeLeft < 0) {
+                        clearInterval(timerInterval);
+                        autoSubmitTest();
+                    }
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            let m = Math.floor(timeLeft / 60);
+            let s = timeLeft % 60;
+            
+            document.getElementById("time").innerHTML = 
+                (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+
+            // Update timer styling based on time left
+            const timerDisplay = document.getElementById("timer");
+            timerDisplay.classList.remove("warning", "critical");
+            
+            if (timeLeft <= 45 && timeLeft > 15) {
+                timerDisplay.classList.add("warning");
+            } else if (timeLeft <= 15) {
+                timerDisplay.classList.add("critical");
+            }
+        }
+        
+        function formatTime(seconds) {
+            let m = Math.floor(seconds / 60);
+            let s = seconds % 60;
+            return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+        }
+
+        function showQuestion(index) {
+            document.querySelectorAll(".question-box").forEach(q => q.classList.remove("active"));
+            document.querySelectorAll(".q-btn").forEach(btn => btn.classList.remove("current"));
+            
+            document.getElementById("q" + index).classList.add("active");
+            document.getElementById("btn" + index).classList.add("current");
+            
+            currentQuestion = index;
+            
+            // Update option selection if already answered
+            if (userAnswers[index] !== null) {
+                document.querySelector(`input[name="q${index}"][value="${userAnswers[index]}"]`).checked = true;
+                updateOptionStyles(index);
+            }
+            
+            // Update navigation buttons
+            updateNavButtons();
+        }
+        
+        function updateNavButtons() {
+            document.getElementById("prevBtn").disabled = currentQuestion === 0 || testCompleted;
+            document.getElementById("nextBtn").disabled = currentQuestion === questions.length - 1 || testCompleted;
+        }
+
+        function selectOption(qIndex, optionIndex) {
+            if (!testCompleted && !reviewMode) {
+                userAnswers[qIndex] = questions[qIndex].options[optionIndex];
+                answered[qIndex] = true;
+                
+                document.getElementById("btn" + qIndex).classList.remove("unanswered");
+                document.getElementById("btn" + qIndex).classList.add("answered");
+                
+                updateOptionStyles(qIndex);
             }
         }
 
@@ -1156,3 +2287,4 @@
     </script>
 </body>
 </html>
+
